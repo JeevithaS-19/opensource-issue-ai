@@ -96,7 +96,7 @@ def main():
         assert trimmed["description"] == "App crashes on login"
         print("PASS: Valid title and description are trimmed")
 
-        # Test duplicate detection with different but overlapping wording.
+        # Test duplicate detection with overlapping wording.
         existing = database.get_all_issues()
 
         new_report = {
@@ -147,6 +147,39 @@ def main():
             existing
         ) == []
         print("PASS: Empty input handling")
+
+        # Test invalid duplicate-detection thresholds.
+        # Validation should happen even when existing_issues is empty.
+        for bad_threshold in ("bad", None, -0.1, 1.1, True):
+            try:
+                find_similar_issues(
+                    {
+                        "title": "Login crash",
+                        "description": "App crashes"
+                    },
+                    [],
+                    threshold=bad_threshold
+                )
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(
+                    "Expected ValueError for threshold: "
+                    f"{bad_threshold!r}"
+                )
+
+        print("PASS: Invalid threshold validation")
+
+        # Test valid threshold boundaries.
+        for valid_threshold in (0, 0.0, 0.25, 1, 1.0):
+            result = find_similar_issues(
+                {"title": "Login crash", "description": "App crashes"},
+                [],
+                threshold=valid_threshold
+            )
+            assert result == []
+
+        print("PASS: Valid threshold boundaries")
 
         # Test delete.
         assert database.delete_issue(second_id)

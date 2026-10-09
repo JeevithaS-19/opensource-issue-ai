@@ -5,13 +5,26 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 def find_similar_issues(new_report, existing_issues, threshold=0.25):
     """
-    Find potentially similar issue reports.
+    Find potentially similar issue reports using TF-IDF and cosine similarity.
 
-    Returns matches sorted by similarity, highest first.
-    Similarity is a clue for human review, not proof of a duplicate.
+    Similarity is a heuristic for human review, not proof of a duplicate.
+    Differently worded reports with similar meanings may be missed.
     """
+
+    # Validate the threshold type before comparing its value.
+    # bool is excluded because Python treats True and False as integers.
+    if (
+        isinstance(threshold, bool)
+        or not isinstance(threshold, (int, float))
+    ):
+        raise ValueError(
+            "Threshold must be a number between 0 and 1."
+        )
+
     if not 0 <= threshold <= 1:
-        raise ValueError("threshold must be between 0 and 1.")
+        raise ValueError(
+            "Threshold must be between 0 and 1."
+        )
 
     if not existing_issues:
         return []
@@ -50,7 +63,7 @@ def find_similar_issues(new_report, existing_issues, threshold=0.25):
         )
         vectors = vectorizer.fit_transform(documents)
     except ValueError:
-        # Empty vocabulary, such as reports containing only stop words.
+        # For example, all documents contain only stop words.
         return []
 
     scores = cosine_similarity(
