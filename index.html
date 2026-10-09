@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BugLens - Turning messy bug reports into actionable developer tasks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f4f1ff;--card:#fff;--tx:#1b1535;--mu:#6a638f;--ln:rgba(70,45,140,.15);--hole:#fff;--in:rgba(70,45,140,.06);
+--g:#12c27a;--c:#0eb0d0;--v:#8b3df0;--p:#e0309f;--y:#e8b800;--r:#ff4d6d;--o:#ff9f43;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#080511;--card:rgba(26,18,52,.78);--tx:#f1ecff;--mu:#a79fc7;--ln:rgba(255,255,255,.1);--hole:#150e2c;--in:rgba(255,255,255,.06)}}
+:root[data-theme="dark"]{--bg:#080511;--card:rgba(26,18,52,.78);--tx:#f1ecff;--mu:#a79fc7;--ln:rgba(255,255,255,.1);--hole:#150e2c;--in:rgba(255,255,255,.06)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 Inter,system-ui,sans-serif;min-height:100vh;
+background-image:radial-gradient(700px 420px at 90% -5%,rgba(168,85,247,.3),transparent 62%),radial-gradient(600px 400px at -5% 15%,rgba(34,211,238,.18),transparent 60%),radial-gradient(700px 480px at 55% 110%,rgba(255,77,216,.18),transparent 60%);background-attachment:fixed}
+h1,h2,h3,h4{font-family:Sora,Inter,sans-serif;letter-spacing:-.02em;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.grad{background:linear-gradient(90deg,var(--g),var(--c),var(--v),var(--p));-webkit-background-clip:text;background-clip:text;color:transparent}
+/* nav */
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;margin:10px 0 28px;padding:9px 14px;display:flex;align-items:center;gap:14px;border:1px solid var(--ln);border-radius:18px;background:var(--card);backdrop-filter:blur(14px);box-shadow:0 10px 36px rgba(0,0,0,.25)}
+.brand{display:flex;align-items:center;gap:9px;font:800 1.35rem Sora,sans-serif;text-decoration:none;color:var(--tx)}
+.logo{width:30px;height:30px;border-radius:50%;border:3px solid transparent;position:relative;background:linear-gradient(var(--hole),var(--hole)) padding-box,conic-gradient(var(--g),var(--c),var(--v),var(--p),var(--g)) border-box;animation:spin 7s linear infinite}
+.logo::after{content:"";position:absolute;width:12px;height:4px;background:var(--p);right:-8px;bottom:-3px;transform:rotate(45deg);border-radius:3px}
+.links{display:flex;gap:4px;flex:1;overflow-x:auto;scrollbar-width:none}
+.links a{white-space:nowrap;padding:8px 13px;border-radius:12px;color:var(--mu);text-decoration:none;font-weight:600;font-size:.92rem;border:1px solid transparent}
+.links a:hover{background:var(--in)}
+.links a.on{color:var(--tx);border-color:var(--g);background:linear-gradient(90deg,rgba(18,194,122,.22),rgba(139,61,240,.25))}
+.pill{padding:5px 12px;border-radius:99px;border:1px solid var(--ln);font-size:.78rem;font-weight:600;white-space:nowrap;color:var(--y)}
+.pill::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--y);margin-right:6px}
+.pill.ok{color:var(--g)}.pill.ok::before{background:var(--g)}
+.ic{background:var(--in);border:1px solid var(--ln);color:var(--tx);width:38px;height:38px;border-radius:12px;cursor:pointer;font-size:1rem}
+/* buttons + forms */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:12px;font:700 .95rem Inter,sans-serif;border:1px solid var(--ln);background:var(--in);color:var(--tx);cursor:pointer;transition:transform .15s,box-shadow .2s;text-decoration:none}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(14,176,208,.3)}
+.btn.pri{border:0;color:#06101a;background:linear-gradient(90deg,var(--g),var(--c),var(--v),var(--g));background-size:250% 100%;animation:shim 6s linear infinite}
+.btn.pri:hover{box-shadow:0 0 26px rgba(18,194,122,.6),0 0 50px rgba(139,61,240,.35)}
+.btn.bad{border-color:var(--p);color:var(--p)}
+label{display:block;font-weight:600;margin:12px 0 5px;font-size:.9rem}
+input,textarea,select{width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--ln);background:var(--in);color:var(--tx);font:inherit}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--g);outline-offset:1px}
+textarea{resize:vertical;min-height:110px}
+.err{margin-top:12px;padding:10px 14px;border-radius:12px;border:1px solid var(--r);background:rgba(255,77,109,.12);color:var(--r);font-weight:600}
+/* blocks */
+.card{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--ln);border-radius:18px;padding:20px 22px;margin-bottom:16px}
+.card h3{font-size:1.05rem;margin-bottom:10px}
+.mu{color:var(--mu);font-size:.9rem}
+.g2{display:grid;grid-template-columns:1.1fr 1fr;gap:34px;align-items:center}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.split{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;align-items:start}
+.split2{display:grid;grid-template-columns:3fr 2fr;gap:20px;align-items:start}
+.page-h{margin:6px 0 22px}.page-h h1{font-size:clamp(1.8rem,3.4vw,2.5rem);font-weight:800}.page-h p{margin:4px 0 0;color:var(--mu)}
+.hero h1{font-size:clamp(2.1rem,4.4vw,3.6rem);line-height:1.06;font-weight:800;margin:0 0 16px}
+.hero h1 span{display:block}
+.hero p.lead{font-size:1.08rem;color:var(--mu);max-width:34rem;margin:0 0 22px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.trust{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.trust span{padding:5px 13px;border-radius:99px;border:1px solid var(--ln);background:var(--in);font-size:.82rem;color:var(--mu)}
+.scan{position:relative;border-radius:22px;padding:18px;background:var(--card);border:1px solid var(--ln);box-shadow:0 30px 70px rgba(0,0,0,.35),0 0 60px rgba(139,61,240,.25)}
+.dots i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.raw{position:relative;overflow:hidden;margin:12px 0;padding:12px 14px;border-radius:12px;border:1px dashed var(--ln);background:var(--in);font:.85rem/1.55 ui-monospace,Menlo,monospace}
+.raw::after{content:"";position:absolute;left:0;right:0;height:34px;top:-40px;background:linear-gradient(transparent,rgba(18,194,122,.45),transparent);animation:scan 3.2s ease-in-out infinite}
+.flow{display:flex;align-items:center;gap:8px;color:var(--c);font-weight:700;font-size:.8rem;margin:10px 0}
+.flow::before,.flow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent)}
+.or{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--ln);font-size:.88rem}.or:last-child{border:0}.or span{color:var(--mu)}.or b{text-align:right}
+.sec{font:800 1.6rem Sora,sans-serif;margin:44px 0 6px}
+.feat .i{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:1.3rem;margin-bottom:10px;background:linear-gradient(135deg,rgba(18,194,122,.25),rgba(139,61,240,.3));border:1px solid var(--ln)}
+.feat h4,.step h4{margin-bottom:4px}.feat p,.step p{margin:0;color:var(--mu);font-size:.92rem}
+.n{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#06101a;background:linear-gradient(135deg,var(--g),var(--c));margin-bottom:10px}
+.hov{transition:transform .2s,border-color .2s}.hov:hover{transform:translateY(-3px);border-color:var(--v)}
+.stat{text-align:center}.stat b{display:block;font:800 2.2rem Sora,sans-serif}
+.cta{margin-top:40px;padding:34px 20px;border-radius:22px;text-align:center;border:1px solid var(--ln);background:linear-gradient(120deg,rgba(18,194,122,.18),rgba(139,61,240,.28),rgba(224,48,159,.22))}
+.cta h2{margin-bottom:6px}.cta p{margin:0 0 16px;color:var(--mu)}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--ln);color:var(--mu);font-size:.85rem;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+/* data viz + tables */
+.kpi{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:18px 20px;transition:transform .25s,box-shadow .25s}
+.kpi::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--k,linear-gradient(90deg,var(--g),var(--c)))}
+.kpi:hover{transform:translateY(-4px);box-shadow:0 14px 32px rgba(139,61,240,.25)}
+.kpi .e{position:absolute;right:16px;top:14px;font-size:1.5rem}.kpi .l{color:var(--mu);font-size:.86rem}
+.kpi b{font:800 2.6rem/1.1 Sora,sans-serif;background:var(--k,linear-gradient(90deg,var(--g),var(--c)));-webkit-background-clip:text;background-clip:text;color:transparent}
+.donut{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.dn{width:140px;height:140px;border-radius:50%;position:relative;display:grid;place-items:center;font:800 1.7rem Sora,sans-serif}
+.dn::before{content:"";position:absolute;inset:23px;border-radius:50%;background:var(--hole)}.dn span{position:relative}
+.lg div{display:flex;align-items:center;gap:8px;margin:5px 0}.lg i{width:11px;height:11px;border-radius:4px}.lg b{margin-left:auto;padding-left:18px}
+.hb{margin-bottom:12px}.hb div:first-child{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:4px}
+.tr{height:10px;border-radius:8px;background:var(--in);overflow:hidden}.tr i{display:block;height:100%;border-radius:8px}
+.tw{overflow-x:auto;border:1px solid var(--ln);border-radius:16px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:620px}
+th{text-align:left;padding:11px 14px;color:var(--mu);font-size:.8rem;background:var(--in);border-bottom:1px solid var(--ln)}
+td{padding:11px 14px;border-bottom:1px solid var(--ln)}tr:last-child td{border:0}tbody tr:hover td{background:rgba(139,61,240,.08)}
+.tag{display:inline-block;padding:2px 11px;border-radius:99px;font-size:.78rem;font-weight:700;border:1px solid currentColor}
+.chip{display:inline-block;padding:3px 12px;margin:0 6px 6px 0;border-radius:99px;border:1px solid var(--g);background:linear-gradient(90deg,rgba(18,194,122,.18),rgba(139,61,240,.2));font:.8rem ui-monospace,Menlo,monospace}
+.rh{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.ring{width:92px;height:92px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--g) calc(var(--p)*1%),var(--in) 0)}
+.ring span{width:72px;height:72px;border-radius:50%;background:var(--hole);display:grid;place-items:center;font:800 1.15rem Sora,sans-serif}
+.miss{border-left:4px solid var(--y);padding:7px 14px;margin:7px 0;background:rgba(232,184,0,.1);border-radius:0 10px 10px 0}
+.dup{border:1px solid rgba(14,176,208,.4);border-radius:12px;padding:11px 14px;margin-bottom:10px;background:rgba(14,176,208,.07)}
+.bar{height:9px;border-radius:8px;background:var(--in);overflow:hidden;margin:6px 0 3px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--g),var(--c),var(--v),var(--p))}
+pre.draft{margin:0 0 14px;padding:18px;white-space:pre-wrap;font:.88rem/1.6 ui-monospace,Menlo,monospace;border-radius:16px;border:1px solid var(--v);background:var(--card)}
+.tip{display:flex;gap:11px;margin:12px 0}.tip .n{flex:none;width:28px;height:28px;margin:0;font-size:.85rem}.tip p{margin:0;color:var(--mu);font-size:.92rem}.tip b{color:var(--tx)}
+.ok{margin:14px 0;padding:11px 14px;border-radius:12px;border:1px solid var(--g);background:rgba(18,194,122,.12);font-weight:600}
+.fr{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes shim{to{background-position:250% 0}}@keyframes scan{to{top:110%}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.hero>*{animation:rise .7s ease-out both}
+@media(max-width:900px){.g2,.g3,.g4,.split,.split2,.fr{grid-template-columns:1fr}nav{position:static;flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+<a class="brand" href="#/"><span class="logo"></span><span class="grad">BugLens</span></a>
+<div class="links" id="links"></div>
+<span class="pill" id="mode"></span>
+<button class="ic" id="theme" aria-label="Toggle light or dark theme">🌗</button>
+</nav>
+<main id="app"></main>
+<footer><span><b>BugLens</b> · Turning messy bug reports into actionable developer tasks.</span><span id="fmode"></span></footer>
+</div>
+<script>
+/* ---------- CONFIG: set API_URL to your Python backend (e.g. "http://localhost:8000") ----------
+   POST {API_URL}/api/analyze  body {title,description,expected,actual}
+        -> {summary,category,component,priority,labels:[],missing_info:[],issue_draft?,duplicates:[{id,title,score 0-1}]}
+   GET  {API_URL}/api/issues   -> [{id,title,description,category,priority,summary,missing_info,labels,duplicate_of,status,created_at}]
+   POST {API_URL}/api/issues   body = one issue object (status Approved / Rejected) -> saved issue
+   Leave API_URL empty to run in demo mode (sample data + built-in keyword analysis, saved in this browser). */
+const API_URL = window.location.origin;
+const PAGES = [["#/","Home","🏠"],["#/dashboard","Dashboard","📊"],["#/submit","Submit Bug","🐞"],["#/results","Analysis Results","🔍"],["#/history","Issue History","📚"]];
+const PRI = ["Critical","High","Medium","Low","Unknown"], PCOL = {Critical:"var(--r)",High:"var(--o)",Medium:"var(--y)",Low:"var(--g)",Unknown:"var(--c)"};
+const ACC = ["#12c27a","#0eb0d0","#8b3df0","#e0309f","#e8b800","#ff9f43"];
+const SEED = [
+ {id:1,title:"Login button does not respond",description:"Nothing happens after clicking login.",category:"Authentication",priority:"Medium",summary:"Login action unresponsive.",missing_info:"Browser; error message",labels:"bug, authentication",duplicate_of:null,status:"Approved",created_at:"2026-10-08 10:12"},
+ {id:2,title:"Application crashes when uploading a PDF",description:"Crash on PDF upload.",category:"File Handling",priority:"High",summary:"Crash during PDF upload.",missing_info:"",labels:"bug, crash, upload",duplicate_of:null,status:"Approved",created_at:"2026-10-08 11:40"},
+ {id:3,title:"Password reset email is not received",description:"No reset email arrives.",category:"Authentication",priority:"Medium",summary:"Reset email missing.",missing_info:"Email provider; spam folder checked?",labels:"bug, email",duplicate_of:null,status:"Pending Review",created_at:"2026-10-08 14:05"},
+ {id:4,title:"Sign-in form stops working after submission",description:"Sign-in hangs.",category:"Authentication",priority:"Medium",summary:"Sign-in form freezes.",missing_info:"",labels:"bug, authentication",duplicate_of:1,status:"Approved",created_at:"2026-10-09 09:30"}];
+const S = {issues:null, cur:null, err:"", busy:false, q:"", st:"All"};
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const list = v => Array.isArray(v) ? v.map(String).filter(Boolean) : String(v||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);
+const np = p => { const w = String(p||"").trim().split(/[\s,]+/)[0]; const t = w.charAt(0).toUpperCase()+w.slice(1).toLowerCase(); return PRI.includes(t) ? t : "Medium"; };
+const badge = p => `<span class="tag" style="color:${PCOL[np(p)]}">${esc(p)}</span>`;
+const stag = s => { const l = String(s).toLowerCase(); const c = l.startsWith("appr")?"var(--g)":l.startsWith("rej")?"var(--p)":l.startsWith("pend")?"var(--y)":"var(--c)"; return `<span class="tag" style="color:${c}">${esc(s)}</span>`; };
+const store = { get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} } };
+
+/* ---------- data layer ---------- */
+async function loadIssues(){
+  if (API_URL) { const r = await fetch(API_URL + "/api/issues"); if (!r.ok) throw new Error("Could not load issues (" + r.status + ")"); return r.json(); }
+  return store.get("bl_issues") || SEED.map(x => ({...x}));
+}
+async function saveIssue(rec){
+  if (API_URL) { const r = await fetch(API_URL + "/api/issues", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(rec)}); if (!r.ok) throw new Error("Could not save the issue (" + r.status + ")"); S.issues = await loadIssues(); return; }
+  rec.id = Math.max(0, ...S.issues.map(i => i.id)) + 1; S.issues.push(rec); store.set("bl_issues", S.issues);
+}
+const toks = t => new Set(String(t).toLowerCase().match(/[a-z]{3,}/g) || []);
+function demoAnalyze(f){
+  const text = (f.title + " " + f.description).toLowerCase(); let comp = "General";
+  for (const [ws, c] of [[["login","sign-in","password","auth"],"Authentication"],[["upload","file","pdf"],"File Handling"],[["ui","button","layout","display"],"UI"],[["database","query","sql"],"Database"]]) if (ws.some(w => text.includes(w))) { comp = c; break; }
+  const miss = [];
+  if (!/chrome|firefox|safari|edge|browser/.test(text)) miss.push("Browser and version");
+  if (!text.includes("error")) miss.push("Error message, if any");
+  if (!/step|then|click|after/.test(text)) miss.push("Detailed reproduction steps");
+  if (!f.expected) miss.push("Expected behavior");
+  const A = toks(f.title + " " + f.description);
+  const duplicates = S.issues.map(i => { const B = toks(i.title + " " + i.description); let k = 0; A.forEach(w => B.has(w) && k++); return {id:i.id, title:i.title, score:+(k / Math.sqrt((A.size||1)*(B.size||1))).toFixed(2)}; }).filter(d => d.score >= .3).sort((a,b) => b.score - a.score);
+  return {summary:(f.description.split(".")[0].slice(0,140) || f.title), category:"Bug", component:comp, priority:/crash|data loss|security/.test(text)?"High":"Medium", labels:["bug", comp.toLowerCase().replace(/ /g,"-")], missing_info:miss, duplicates};
+}
+async function analyze(f){
+  let raw;
+  if (API_URL) { const r = await fetch(API_URL + "/api/analyze", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(f)}); if (!r.ok) throw new Error("The AI service returned " + r.status); raw = await r.json(); }
+  else raw = demoAnalyze(f);
+  const res = {summary:raw.summary||"", category:raw.category||"Uncategorised", component:raw.component||"Unknown", priority:raw.priority||"Medium", labels:list(raw.labels), missing_info:list(raw.missing_info), draft:raw.issue_draft||""};
+  return {f, res, dups:(raw.duplicates||[]).sort((a,b) => b.score - a.score), decision:null, edit:false};
+}
+function buildDraft(c){ const {f,res} = c; return res.draft || `Title: ${f.title}\n\nSummary: ${res.summary}\n\nDescription: ${f.description}\n\nExpected behavior: ${f.expected||"Not provided"}\nActual behavior: ${f.actual||"Not provided"}\n\nMissing information:\n${res.missing_info.map(m=>"- "+m).join("\n")||"- None identified"}\n\nSuggested labels: ${res.labels.join(", ")}\nSuggested priority: ${res.priority} (AI suggestion, needs review)`; }
+
+/* ---------- view helpers ---------- */
+const kpi = (l,v,e,k) => `<div class="kpi" style="${k?`--k:${k}`:""}"><span class="e">${e}</span><div class="l">${l}</div><b>${v}</b></div>`;
+const hbars = o => { const m = Math.max(1, ...Object.values(o)); return Object.entries(o).map(([k,v],i) => `<div class="hb"><div><span>${esc(k)}</span><b>${v}</b></div><div class="tr"><i style="width:${v/m*100}%;background:linear-gradient(90deg,${ACC[i%6]},${ACC[(i+1)%6]})"></i></div></div>`).join("") || '<span class="mu">No data yet.</span>'; };
+function donut(o){ const t = Object.values(o).reduce((a,b)=>a+b,0); if (!t) return '<span class="mu">No data yet.</span>'; let a = 0, st = [], lg = ""; PRI.forEach(p => { const v = o[p]||0; if (!v) return; const s = a/t*100; a += v; st.push(`${PCOL[p]} ${s}% ${a/t*100}%`); lg += `<div><i style="background:${PCOL[p]}"></i>${p}<b>${v}</b></div>`; }); return `<div class="donut"><div class="dn" style="background:conic-gradient(${st.join(",")})"><span>${t}</span></div><div class="lg">${lg}</div></div>`; }
+function table(rows, more){ if (!rows.length) return '<div class="card mu">No issues to show.</div>'; return `<div class="tw"><table><thead><tr><th>ID</th><th>Title</th><th>Category</th><th>Priority</th><th>Status</th>${more?"<th>Possible duplicate of</th><th>Labels</th>":""}<th>Created</th></tr></thead><tbody>${rows.map(r => `<tr><td>#${esc(r.id)}</td><td><b>${esc(r.title)}</b></td><td>${esc(r.category)}</td><td>${badge(np(r.priority))}</td><td>${stag(r.status)}</td>${more?`<td>${r.duplicate_of?"#"+esc(r.duplicate_of):"-"}</td><td>${list(r.labels).slice(0,3).map(l=>`<span class="chip">${esc(l)}</span>`).join("")||"-"}</td>`:""}<td class="mu">${esc(r.created_at)}</td></tr>`).join("")}</tbody></table></div>`; }
+const head = (t,p) => `<div class="page-h"><h1>${t}</h1><p>${p}</p></div>`;
+
+/* ---------- pages ---------- */
+function home(){
+  const I = S.issues, d = I.filter(i=>i.duplicate_of).length, n = I.filter(i=>list(i.missing_info).length).length;
+  const F = [["🧠","AI bug analysis","Turns a rough report into a clear summary, category and affected component."],["🕵️","Missing-information check","Lists what developers still need, like browser, error message or steps."],["👯","Duplicate detection","Compares each report with saved issues and shows a similarity score."],["🏷️","Labels and priority","Suggests labels and a priority so the issue lands in the right queue."],["📝","Structured issue draft","Organizes everything into a tidy draft that is ready to review."],["✅","You stay in control","Nothing is saved until a maintainer approves, edits or rejects it."]];
+  const St = [["Submit","Paste the title and description of the bug."],["Analyze","The AI summarizes it and spots what is missing."],["Compare","BugLens searches saved issues for similar reports."],["Decide","Approve, edit or reject. Approved issues are saved."]];
+  return `<section class="g2 hero"><div><h1><span>Turn messy bug reports</span><span class="grad">into clear developer tasks.</span></h1>
+<p class="lead">BugLens reads each incoming report, spots what is missing, flags likely duplicates and drafts the issue. You approve the final version.</p>
+<div class="row"><a class="btn pri" href="#/submit">Analyze a bug</a><a class="btn" href="#/dashboard">Open dashboard</a></div>
+<div class="trust"><span>Open-weight AI model</span><span>Human approval before saving</span><span>SQLite storage</span></div></div>
+<div><div class="scan"><div class="dots"><i></i><i></i><i></i><span class="mu">Example report</span></div>
+<div class="raw">login btn not working?? i type my username + password, click it and nothing happens. pls fix!!</div><div class="flow">BugLens triage</div>
+<div class="or"><span>Summary</span><b>Login action does not respond</b></div><div class="or"><span>Category</span><b>Bug · Authentication</b></div>
+<div class="or"><span>Priority</span><b>${badge("Medium")}</b></div><div class="or"><span>Labels</span><b><span class="chip">bug</span><span class="chip">authentication</span></b></div>
+<div class="or"><span>Missing</span><b>Browser, error message</b></div><div class="or"><span>Similar issue</span><b>#1 Login button does not respond</b></div></div>
+<p class="mu" style="text-align:center;margin:8px 0 0">Illustrative example. Real results depend on the model.</p></div></section>
+<div class="g3" style="margin-top:34px"><div class="card stat"><b class="grad">${I.length}</b><span class="mu">Reports triaged</span></div><div class="card stat"><b class="grad">${d}</b><span class="mu">Possible duplicates flagged</span></div><div class="card stat"><b class="grad">${n}</b><span class="mu">Reports that needed more detail</span></div></div>
+<h2 class="sec">Everything a maintainer does first, done for you</h2><p class="mu" style="margin:0 0 16px">The first pass on every bug report, without the repetitive reading and searching.</p>
+<div class="g3">${F.map(([i,t,p])=>`<div class="card feat hov"><div class="i">${i}</div><h4>${t}</h4><p>${p}</p></div>`).join("")}</div>
+<h2 class="sec">How it works</h2><p class="mu" style="margin:0 0 16px">Four steps from a rough report to a saved issue.</p>
+<div class="g4">${St.map(([t,p],i)=>`<div class="card step hov"><div class="n">${i+1}</div><h4>${t}</h4><p>${p}</p></div>`).join("")}</div>
+<div class="cta"><h2>Got a bug report waiting?</h2><p>Paste it in and see the triage in seconds.</p><a class="btn pri" href="#/submit">Analyze a bug now</a></div>`;
+}
+function dashboard(){
+  const I = S.issues, pend = I.filter(i=>/^pend/i.test(i.status)).length + (S.cur && !S.cur.decision ? 1 : 0);
+  const cnt = f => I.reduce((o,i) => { const k = f(i); o[k] = (o[k]||0)+1; return o; }, {});
+  const recent = [...I].sort((a,b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0,8);
+  return head("Dashboard","Your bug queue at a glance: what came in, what repeats and what needs a decision.") +
+  `<div class="g4">${kpi("Total issues",I.length,"🐞")}${kpi("Potential duplicates",I.filter(i=>i.duplicate_of).length,"👯","linear-gradient(90deg,var(--y),var(--o))")}${kpi("Needs more information",I.filter(i=>list(i.missing_info).length).length,"❓","linear-gradient(90deg,var(--o),var(--p))")}${kpi("Pending approvals",pend,"⏳","linear-gradient(90deg,var(--c),var(--v))")}</div>
+<div class="g3" style="margin-top:16px"><div class="card"><h3>🔥 Reports by priority</h3>${donut(cnt(i=>np(i.priority)))}</div><div class="card"><h3>🧩 Reports by category</h3>${hbars(cnt(i=>i.category))}</div><div class="card"><h3>📌 Reports by status</h3>${hbars(cnt(i=>i.status))}</div></div>
+<h2 style="margin:10px 0 12px;font-size:1.3rem">Recent issues</h2>${table(recent)}`;
+}
+function submit(){
+  return head("Submit a bug","Describe the problem in your own words. BugLens summarizes it, spots missing details and looks for duplicates.") +
+  `<div class="split"><form class="card" id="bugform" novalidate><label for="t">Bug title *</label><input id="t" placeholder="e.g. Login button not working">
+<label for="d">Bug description *</label><textarea id="d" style="min-height:150px" placeholder="What happened? What did you click or type?"></textarea>
+<div class="fr" style="grid-template-columns:1fr 1fr;margin:0"><div><label for="e">Expected behavior</label><textarea id="e" placeholder="What should have happened?"></textarea></div><div><label for="a">Actual behavior</label><textarea id="a" placeholder="What happened instead?"></textarea></div></div>
+${S.err ? `<div class="err" role="alert">${esc(S.err)}</div>` : ""}<div style="margin-top:16px"><button class="btn pri" style="width:100%" ${S.busy?"disabled":""}>${S.busy?"Analyzing your report…":"Analyze Bug"}</button></div></form>
+<div><div class="card"><h3>Reports that triage well</h3><div class="tip"><div class="n">1</div><p><b>Say what you did.</b> List the clicks or steps before the problem.</p></div><div class="tip"><div class="n">2</div><p><b>Say what you saw.</b> Copy any error message exactly.</p></div><div class="tip"><div class="n">3</div><p><b>Name your setup.</b> Add the browser, device or version.</p></div></div>
+<div class="card"><h3>What happens next</h3><p class="mu" style="margin:0">The AI writes a summary and suggests labels and priority. BugLens lists missing details and similar reports. You review the draft and choose Approve, Edit or Reject.</p></div></div></div>`;
+}
+function results(){
+  const c = S.cur, h = head("Analysis results","Review what the AI found, then approve, edit or reject.");
+  if (!c) return h + `<div class="card"><h3>Nothing to review yet</h3><p class="mu">Submit a bug and the analysis will appear here.</p><a class="btn pri" href="#/submit">Go to Submit Bug</a></div>`;
+  const {f,res,dups} = c, top = dups[0], pct = top ? Math.min(100, Math.round(top.score*100)) : 0;
+  if (c.draft == null) c.draft = buildDraft(c);
+  const body = c.edit && !c.decision ? `<label>Summary</label><textarea id="es">${esc(res.summary)}</textarea><label>Priority</label><select id="ep">${PRI.map(p=>`<option ${p===np(res.priority)?"selected":""}>${p}</option>`).join("")}</select><label>Labels (comma separated)</label><input id="el" value="${esc(res.labels.join(", "))}"><label>Issue draft</label><textarea id="ed" style="min-height:240px">${esc(c.draft)}</textarea><div style="margin-top:12px"><button class="btn pri" data-a="saveedit">Save edits</button></div>` : `<pre class="draft">${esc(c.draft)}</pre><button class="btn" data-a="dl">Download draft (.md)</button>`;
+  const act = c.decision ? `<div class="ok">Issue ${c.decision.toLowerCase()} and recorded.</div><div class="row"><a class="btn pri" href="#/submit" data-a="new">Submit another bug</a><a class="btn" href="#/dashboard">View dashboard</a></div>` : `<div class="g3" style="margin-top:18px"><button class="btn pri" data-a="approve">Approve</button><button class="btn" data-a="edit">Edit</button><button class="btn bad" data-a="reject">Reject</button></div>`;
+  return h + `<div class="card"><div class="rh"><div><span class="mu">Report</span><h2 style="margin:4px 0 10px;font-size:1.5rem">${esc(f.title)}</h2>${badge(res.priority)} <span class="tag" style="color:var(--c)">${esc(res.category)}</span> <span class="tag" style="color:var(--v)">${esc(res.component)}</span></div><div style="text-align:center"><div class="ring" style="--p:${pct}"><span>${pct}%</span></div><div class="mu" style="font-size:.78rem">${top?"closest match":"no similar issue"}</div></div></div></div>
+<div class="split2"><div><div class="card"><h3>🧠 AI summary</h3><p style="margin:0">${esc(res.summary)}</p></div>
+<div class="card"><h3>🏷️ Suggested priority and labels</h3>${badge(res.priority)}<div style="height:12px"></div>${res.labels.map(l=>`<span class="chip">${esc(l)}</span>`).join("")||'<span class="mu">No labels suggested</span>'}<p class="mu" style="margin:8px 0 0">AI suggestion. A maintainer should confirm it.</p></div>
+<div class="card"><h3>🕵️ Missing information</h3>${res.missing_info.map(m=>`<div class="miss">${esc(m)}</div>`).join("")||'<span class="mu">No missing information detected.</span>'}</div></div>
+<div class="card"><h3>🔁 Similar issues and scores</h3>${dups.slice(0,5).map(d=>{const p=Math.min(100,Math.round(d.score*100));return `<div class="dup"><b>#${esc(d.id)}</b> ${esc(d.title)}<div class="bar"><i style="width:${p}%"></i></div><span class="mu">Similarity ${p}%</span></div>`}).join("") + (dups.length ? '<p class="mu" style="margin:6px 0 0">Similarity suggests a possible duplicate, not a confirmed one.</p>' : '<span class="mu">No similar reports found.</span>')}</div></div>
+<h2 style="margin:8px 0 4px;font-size:1.3rem">Generated issue draft</h2><p class="mu" style="margin:0 0 12px">Your own input and AI suggestions are combined here. Review before approving.</p>${body}${act}`;
+}
+function history(){
+  const sts = ["All", ...new Set(S.issues.map(i => i.status))];
+  return head("Issue history","Every saved report, with its status and any possible duplicate.") +
+  `<div class="fr"><div><label for="q">Search by title</label><input id="q" placeholder="Type to filter…" value="${esc(S.q)}"></div><div><label for="s">Status</label><select id="s">${sts.map(s=>`<option ${s===S.st?"selected":""}>${esc(s)}</option>`).join("")}</select></div></div><div id="hist">${histTable()}</div>`;
+}
+const histTable = () => { const r = S.issues.filter(i => (S.st==="All"||i.status===S.st) && i.title.toLowerCase().includes(S.q.toLowerCase())).sort((a,b)=>b.id-a.id); return table(r,true) + `<p class="mu">${r.length} issue(s) shown. "Possible duplicate of" is the ID of an earlier report this one may repeat.</p>`; };
+
+/* ---------- router + events ---------- */
+const ROUTES = {"#/":home,"#/dashboard":dashboard,"#/submit":submit,"#/results":results,"#/history":history};
+function render(){
+  const h = ROUTES[location.hash] ? location.hash : "#/";
+  $("#links").innerHTML = PAGES.map(([u,n,i]) => `<a href="${u}" class="${u===h?"on":""}">${i} ${n}</a>`).join("");
+  const m = API_URL ? "Backend connected" : "Demo mode"; $("#mode").textContent = m; $("#mode").className = "pill" + (API_URL ? " ok" : ""); $("#fmode").textContent = API_URL ? "Backend connected" : "Demo mode · sample data saved in this browser";
+  $("#app").innerHTML = S.issues ? ROUTES[h]() : '<p class="mu">Loading…</p>';
+}
+function go(h){ if (location.hash === h) render(); else location.hash = h; }
+addEventListener("hashchange", () => { render(); scrollTo(0,0); });
+$("#theme").onclick = () => { const r = document.documentElement, n = r.dataset.theme === "dark" ? "light" : "dark"; r.dataset.theme = n; store.set("bl_theme", n); };
+document.addEventListener("submit", async e => {
+  if (e.target.id !== "bugform") return; e.preventDefault();
+  const f = {title:$("#t").value.trim(), description:$("#d").value.trim(), expected:$("#e").value.trim(), actual:$("#a").value.trim()};
+  if (!f.title || !f.description) { S.err = "Add both a bug title and a bug description, then try again."; return render(); }
+  if (f.description.split(/\s+/).length < 3) { S.err = "The description is too short to analyze. Add at least a short sentence."; return render(); }
+  S.err = ""; S.busy = true; render();
+  try { S.cur = await analyze(f); S.busy = false; go("#/results"); }
+  catch (x) { S.busy = false; S.err = "The AI analysis failed, so nothing was analyzed. Details: " + x.message; render(); }
+});
+document.addEventListener("input", e => { if (e.target.id === "q") { S.q = e.target.value; $("#hist").innerHTML = histTable(); } });
+document.addEventListener("change", e => { if (e.target.id === "s") { S.st = e.target.value; $("#hist").innerHTML = histTable(); } });
+async function decide(status){
+  const {f,res,dups} = S.cur;
+  const rec = {title:f.title, description:f.description, category:res.category, priority:res.priority, summary:res.summary, missing_info:res.missing_info.join("; "), labels:res.labels.join(", "), duplicate_of:dups[0] ? dups[0].id : null, status, created_at:new Date().toISOString().slice(0,16).replace("T"," ")};
+  try { await saveIssue(rec); S.cur.decision = status; S.cur.edit = false; } catch (x) { alert("Could not save the issue: " + x.message); }
+  render();
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-a]"); if (!b || !S.cur) return; const a = b.dataset.a, c = S.cur;
+  if (a === "approve") decide("Approved"); else if (a === "reject") decide("Rejected");
+  else if (a === "edit") { c.edit = !c.edit; render(); }
+  else if (a === "saveedit") { c.res.summary = $("#es").value; c.res.priority = $("#ep").value; c.res.labels = list($("#el").value); c.draft = $("#ed").value; c.edit = false; render(); }
+  else if (a === "new") S.cur = null;
+  else if (a === "dl") { const u = URL.createObjectURL(new Blob([c.draft], {type:"text/markdown"})), l = document.createElement("a"); l.href = u; l.download = "buglens_issue_draft.md"; l.click(); URL.revokeObjectURL(u); }
+});
+(async () => {
+  const t = store.get("bl_theme"); if (t) document.documentElement.dataset.theme = t;
+  render();
+  try { S.issues = await loadIssues(); } catch (x) { S.issues = []; alert(x.message); }
+  render();
+})();
+</script>
+</body>
+</html>
