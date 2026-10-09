@@ -1,16 +1,31 @@
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
 def find_similar_issues(new_report, existing_issues, threshold=0.25):
     """
-    Find potentially similar issue reports.
+    Find potentially similar issue reports using TF-IDF and cosine similarity.
 
-    Returns matches sorted by similarity, highest first.
-    Similarity is a clue for human review, not proof of a duplicate.
+    Similarity is a heuristic for human review, not proof of a duplicate.
+    Differently worded reports with similar meanings may be missed.
     """
+
+    # Validate threshold type before comparing its value.
+    # Booleans are excluded because Python treats them as integers.
+    if (
+        isinstance(threshold, bool)
+        or not isinstance(threshold, (int, float))
+    ):
+        raise ValueError(
+            "Threshold must be a number between 0 and 1."
+        )
+
     if not 0 <= threshold <= 1:
-        raise ValueError("threshold must be between 0 and 1.")
+        raise ValueError(
+            "Threshold must be between 0 and 1."
+        )
+
     if not existing_issues:
         return []
 
@@ -30,6 +45,7 @@ def find_similar_issues(new_report, existing_issues, threshold=0.25):
             str(issue.get("title", "")) + " " +
             str(issue.get("description", ""))
         ).strip()
+
         if text:
             valid_issues.append(issue)
             existing_texts.append(text)
@@ -47,8 +63,9 @@ def find_similar_issues(new_report, existing_issues, threshold=0.25):
         )
         vectors = vectorizer.fit_transform(documents)
     except ValueError:
-        # Empty vocabulary, such as reports containing only stop words.
+        # For example, all documents contain only stop words.
         return []
+
     scores = cosine_similarity(
         vectors[0:1],
         vectors[1:]
@@ -66,6 +83,7 @@ def find_similar_issues(new_report, existing_issues, threshold=0.25):
                 "description": issue.get("description", ""),
                 "similarity": round(score, 3)
             })
+
     matches.sort(
         key=lambda match: match["similarity"],
         reverse=True
