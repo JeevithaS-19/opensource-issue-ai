@@ -11,8 +11,8 @@ def find_similar_issues(new_report, existing_issues, threshold=0.25):
     Differently worded reports with similar meanings may be missed.
     """
 
-    # Validate the threshold type before comparing its value.
-    # bool is excluded because Python treats True and False as integers.
+    # Validate threshold type before comparing its value.
+    # Booleans are excluded because Python treats them as integers.
     if (
         isinstance(threshold, bool)
         or not isinstance(threshold, (int, float))

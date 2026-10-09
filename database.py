@@ -1,4 +1,5 @@
 
+import ast
 import json
 import sqlite3
 from datetime import datetime
@@ -27,7 +28,7 @@ def initialize_database():
 
 
 def _decode_list(value):
-    """Decode JSON lists, while supporting older saved Python-list strings."""
+    """Decode JSON lists and support older Python-list strings."""
     if isinstance(value, list):
         return value
 
@@ -41,12 +42,10 @@ def _decode_list(value):
     except (json.JSONDecodeError, TypeError):
         pass
 
-    # Compatibility with older records saved using str(list).
-    import ast
     try:
         result = ast.literal_eval(value)
         return result if isinstance(result, list) else []
-    except (ValueError, SyntaxError):
+    except (ValueError, SyntaxError, TypeError):
         return []
 
 
@@ -62,13 +61,11 @@ def _format_issue(row):
     return issue
 
 
-
 def save_issue(issue_data):
     """Save an issue and return its database ID."""
     if not isinstance(issue_data, dict):
         raise ValueError("Issue data must be a dictionary.")
 
-    # Validate original values before converting or saving them.
     title = issue_data.get("title")
     description = issue_data.get("description")
 
@@ -81,7 +78,7 @@ def save_issue(issue_data):
     title = title.strip()
     description = description.strip()
 
-    # Accept either field name from the AI agent or frontend.
+    # Support both AI/frontend field names.
     missing_questions = issue_data.get("missing_information")
     if missing_questions is None:
         missing_questions = issue_data.get("missing_info", [])
@@ -142,7 +139,7 @@ def get_issue_by_id(issue_id):
 
 
 def update_issue_status(issue_id, status):
-    """Update an issue's status. Return True if the issue exists."""
+    """Update an issue's status. Return True if it exists."""
     allowed_statuses = {
         "Pending Review",
         "Approved",
