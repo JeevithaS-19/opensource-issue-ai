@@ -15,24 +15,57 @@ def main():
         database.DB_NAME = test_db
         database.initialize_database()
 
+        # Test saving AI output using missing_information.
         issue_id = database.save_issue({
             "title": "Application crashes on login",
             "description": (
-                "The application crashes whenever "
-                "I enter my username and password."
+                "The application crashes whenever I enter "
+                "my username and password."
             ),
             "category": "Bug",
             "priority": "High",
+            "summary": "Application crashes during login.",
+            "missing_information": [
+                "Which operating system are you using?",
+                "What application version is installed?"
+            ],
             "labels": ["bug", "login"]
         })
 
-        existing = database.get_all_issues()
+        saved = database.get_issue_by_id(issue_id)
 
+        assert saved is not None
+        assert saved["missing_info"] == [
+            "Which operating system are you using?",
+            "What application version is installed?"
+        ]
+        assert saved["missing_information"] == saved["missing_info"]
+        assert saved["labels"] == ["bug", "login"]
+        print("PASS: Database saving and JSON list fields")
+
+        # Test compatibility with the older field name.
+        second_id = database.save_issue({
+            "title": "Settings page freezes",
+            "description": "The settings page stops responding.",
+            "missing_info": ["Which settings page?"]
+        })
+        second = database.get_issue_by_id(second_id)
+        assert second["missing_info"] == ["Which settings page?"]
+        print("PASS: Backward-compatible missing_info field")
+
+        # Test status updates.
+        assert database.update_issue_status(issue_id, "Approved")
+        assert database.get_issue_by_id(issue_id)["status"] == "Approved"
+        assert not database.update_issue_status(99999, "Approved")
+        print("PASS: Issue status updates")
+
+        # Test duplicate detection with different but overlapping wording.
+        existing = database.get_all_issues()
         new_report = {
-            "title": "Application crashes on login",
+            "title": "Login application crashes",
             "description": (
-                "The application crashes whenever "
-                "I enter my username and password."
+                "The application crashes when entering "
+                "the username and password."
             )
         }
 
@@ -42,34 +75,63 @@ def main():
             threshold=0.15
         )
 
-        print("Saved issue ID:", issue_id)
-        print("Number of saved issues:", len(existing))
-        print("Potential duplicate matches:")
+        assert matches, "Expected a potentially similar report."
+        assert matches[0]["id"] == issue_id
+        print(
+            "PASS: Similar report found with score",
+            matches[0]["similarity"]
+        )
 
-        for match in matches:
-            print(
-                f"ID: {match['id']} | "
-                f"Title: {match['title']} | "
-                f"Similarity: {match['similarity']}"
+        # Test an unrelated report.
+        unrelated_report = {
+            "title": "PDF upload fails",
+            "description": (
+                "Uploading a PDF document produces an error."
             )
+        }
 
-        assert len(existing) == 1, "Issue was not saved correctly."
-        assert matches, "Expected to find the matching issue."
+        unrelated_matches = find_similar_issues(
+            unrelated_report,
+            existing,
+            threshold=0.25
+        )
+
+        assert not unrelated_matches, (
+            "Unexpected match for unrelated PDF report."
+        )
+        print("PASS: Unrelated report not matched")
+
+        # Test empty input cases.
+        assert find_similar_issues(new_report, []) == []
+        assert find_similar_issues(
+            {"title": "", "description": ""},
+            existing
+        ) == []
+        print("PASS: Empty input handling")
+
+        # Test delete.
+        assert database.delete_issue(second_id)
+        assert database.get_issue_by_id(second_id) is None
+        print("PASS: Issue deletion")
 
         print("\nAll tests passed!")
 
     finally:
-        # Restore the original database setting.
         database.DB_NAME = original_db
 
-        # Remove temporary files after SQLite connections are closed.
+        # Close connections before removing the temporary database.
+        for suffix in ("", "-journal", "-wal", "-shm"):
+            path = test_db + suffix
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except PermissionError:
+                print("Could not remove temporary file:", path)
+
         try:
-            os.remove(test_db)
             os.rmdir(temp_dir)
-        except PermissionError:
-            print("Test database cleanup can be done manually.")
-        except FileNotFoundError:
-            pass
+        except OSError:
+            print("Temporary folder could not be removed:", temp_dir)
 
 
 if __name__ == "__main__":
