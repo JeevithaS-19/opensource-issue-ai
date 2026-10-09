@@ -62,13 +62,24 @@ def _format_issue(row):
     return issue
 
 
+
 def save_issue(issue_data):
     """Save an issue and return its database ID."""
-    title = str(issue_data.get("title", "")).strip()
-    description = str(issue_data.get("description", "")).strip()
+    if not isinstance(issue_data, dict):
+        raise ValueError("Issue data must be a dictionary.")
 
-    if not title or not description:
-        raise ValueError("Issue title and description are required.")
+    # Validate original values before converting or saving them.
+    title = issue_data.get("title")
+    description = issue_data.get("description")
+
+    if not isinstance(title, str) or not title.strip():
+        raise ValueError("Issue title is required.")
+
+    if not isinstance(description, str) or not description.strip():
+        raise ValueError("Issue description is required.")
+
+    title = title.strip()
+    description = description.strip()
 
     # Accept either field name from the AI agent or frontend.
     missing_questions = issue_data.get("missing_information")

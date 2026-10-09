@@ -49,7 +49,9 @@ def main():
             "description": "The settings page stops responding.",
             "missing_info": ["Which settings page?"]
         })
+
         second = database.get_issue_by_id(second_id)
+
         assert second["missing_info"] == ["Which settings page?"]
         print("PASS: Backward-compatible missing_info field")
 
@@ -59,8 +61,44 @@ def main():
         assert not database.update_issue_status(99999, "Approved")
         print("PASS: Issue status updates")
 
+        # Test invalid title and description validation.
+        invalid_issues = [
+            {"title": None, "description": "Valid description"},
+            {"title": "Valid title", "description": None},
+            {"title": "", "description": "Valid description"},
+            {"title": "Valid title", "description": ""},
+            {"title": "   ", "description": "Valid description"},
+            {"title": "Valid title", "description": "   "},
+            {"title": 123, "description": "Valid description"},
+            {"title": "Valid title", "description": ["not", "text"]},
+        ]
+
+        for issue in invalid_issues:
+            try:
+                database.save_issue(issue)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(
+                    f"Invalid issue should have been rejected: {issue}"
+                )
+
+        print("PASS: Invalid title and description validation")
+
+        # Confirm valid values are trimmed and saved.
+        trimmed_id = database.save_issue({
+            "title": "  Login crash  ",
+            "description": "  App crashes on login  "
+        })
+
+        trimmed = database.get_issue_by_id(trimmed_id)
+        assert trimmed["title"] == "Login crash"
+        assert trimmed["description"] == "App crashes on login"
+        print("PASS: Valid title and description are trimmed")
+
         # Test duplicate detection with different but overlapping wording.
         existing = database.get_all_issues()
+
         new_report = {
             "title": "Login application crashes",
             "description": (
@@ -77,6 +115,7 @@ def main():
 
         assert matches, "Expected a potentially similar report."
         assert matches[0]["id"] == issue_id
+
         print(
             "PASS: Similar report found with score",
             matches[0]["similarity"]
@@ -119,7 +158,7 @@ def main():
     finally:
         database.DB_NAME = original_db
 
-        # Close connections before removing the temporary database.
+        # Attempt to remove temporary SQLite files.
         for suffix in ("", "-journal", "-wal", "-shm"):
             path = test_db + suffix
             try:
