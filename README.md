@@ -1,4 +1,17 @@
-# BugLens — connected frontend + backend
+# 🔍 BugLens: AI-Powered Issue Resolver
+
+**Built for the MSRIT Hacktoberfest Hack Day (MLH & IEEE CIS)**
+
+BugLens is an AI-driven tool designed to streamline open-source project maintenance. It automates bug triage, summarizes complex issues, and detects duplicate reports, allowing maintainers to focus on shipping code rather than managing issue queues.
+
+## 🚀 Quick Start (Local Run)
+
+1. Clone the repository and navigate into it.
+2. Install dependencies: `pip install -r requirements.txt`
+3. Start the backend: `python server.py`
+4. Access the app: `http://127.0.0.1:5000`
+
+---# BugLens — connected frontend + backend
 
 This integration bundle connects Member 2's existing `index.html` frontend to Member 1's AI function and Member 3's SQLite/duplicate-detection modules.
 
